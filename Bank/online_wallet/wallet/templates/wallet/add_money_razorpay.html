@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Money</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #3399cc;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #287aa0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Add Money</h2>
+        <form id="razorpay-form">
+            <button id="rzp-button">Pay with Razorpay</button>
+        </form>
+
+        <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+        <script>
+            var options = {
+                "key": "{{ payment.key }}",  // Your Razorpay Key ID
+                "amount": "{{ payment.amount }}",  // Amount in paise (already calculated in view)
+                "currency": "INR",
+                "name": "Your Company",
+                "description": "Test Transaction",
+                "order_id": "{{ payment.id }}",  // Razorpay order ID
+                "handler": function (response) {
+                    var xhr = new XMLHttpRequest();
+                    xhr.open("POST", "{% url 'wallet:payment_success' %}", true);
+                    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                    xhr.onload = function() {
+                        if (xhr.status === 200) {
+                            // Redirect to balance page after successful payment
+                            window.location.href = "{% url 'wallet:balance_view' %}";
+                        }
+                    };
+                    xhr.send("payment_id=" + response.razorpay_payment_id + 
+                             "&order_id=" + response.razorpay_order_id + 
+                             "&signature=" + response.razorpay_signature + 
+                             "&amount={{ payment.amount }}" + 
+                             "&csrfmiddlewaretoken={{ csrf_token }}");
+                },
+                "prefill": {
+                    "name": "Test User",
+                    "email": "test@example.com",
+                    "contact": "9999999999"
+                },
+                "theme": {
+                    "color": "#3399cc"
+                }
+            };
+
+            document.getElementById('rzp-button').onclick = function (e) {
+                var rzp = new Razorpay(options);
+                rzp.open();
+                e.preventDefault();
+            }
+        </script>
+    </div>
+</body>
+</html>
